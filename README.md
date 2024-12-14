@@ -9,9 +9,9 @@ Notes are organized in a hierarchical format, enabling a multi-level breakdown o
 ## Engaging Testing
 Spartan Odyssey provides a method of gamifying the testing process. Our testing features provides instant feedback and gamifies the memorization process in addition to traditional multiple choice tests. 
   Testing is provided in 3 modes:
-    - Practice Mode: Gamified testing mode that provides instant feedback
-    - Traditional Mode: Time-limited testing mode that mimics more traditional testing environments
-    - Exam Mode: A more extreme version of traditional testing that mimics an exam environment
+- Practice Mode: Gamified testing mode that provides instant feedback
+- Traditional Mode: Time-limited testing mode that mimics more traditional testing environments
+- Exam Mode: A more extreme version of traditional testing that mimics an exam environment
 
 ## Study Habit Building
 Our study app helps students build better study habits by allowing students to plan their study sessions out in advance. 
