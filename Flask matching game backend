@@ -1,0 +1,21 @@
+from flask import Flask, request, jsonify, render_template
+import random
+
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return render_template('index.html')
+
+@app.route('/api/matching-game', methods=['POST'])
+def create_matching_game():
+    data = request.get_json()
+    terms, definitions = data.get('terms', []), data.get('definitions', [])
+
+    if len(terms) != len(definitions):
+        return jsonify({'success': False, 'error': 'Number of terms and definitions must match'}), 400
+
+    return jsonify({'success': True, 'terms': terms, 'definitions': random.sample(definitions, len(definitions))})
+
+if __name__ == '__main__':
+    app.run(debug=True)
