@@ -1,21 +1,339 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, redirect, url_for, session
 import random
+import firebase_admin
+from firebase_admin import credentials, firestore
+from datetime import datetime
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
+import os
+from google_client_id import GOOGLE_CLIENT_ID
 
+from functools import wraps
+
+# Initialize Flask app
 app = Flask(__name__)
+app.secret_key = os.environ.get("SECRET_KEY") or os.urandom(24)
 
+# Configuration: Replace with your actual Google Client ID
+GOOGLE_CLIENT_ID=GOOGLE_CLIENT_ID
+
+
+# Initialize Firebase
+def initialize_firebase():
+    cred = credentials.Certificate("serviceAccountKey.json")
+    firebase_admin.initialize_app(cred)
+    return firestore.client()
+
+db = initialize_firebase()
+
+# Flask-Login setup
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
+class User(UserMixin):
+    def __init__(self, id_, email, name):
+        self.id = id_
+        self.email = email
+        self.name = name
+
+@login_manager.user_loader
+def load_user(user_id):
+    user_ref = db.collection('users').document(user_id).get()
+    if user_ref.exists:
+        user_data = user_ref.to_dict()
+        return User(id_=user_id, email=user_data['email'], name=user_data.get('name'))
+    return None
+
+# Helper Functions
+def validate_game_input(terms, definitions):
+    if len(terms) != len(definitions):
+        return False, "Number of terms and definitions must match"
+    if not terms or not definitions:
+        return False, "Terms and definitions cannot be empty"
+    return True, None
+
+def create_game_record(terms, definitions):
+    if not current_user.is_authenticated:
+        return None, None, "User not authenticated"
+
+    game_ref = db.collection('games').document()
+    shuffled_defs = random.sample(definitions, len(definitions))
+    game_ref.set({
+        'terms': terms,
+        'definitions': shuffled_defs,
+        'created_at': datetime.now(),
+        'completed': False,
+        'user_id': current_user.id
+    })
+    return game_ref, shuffled_defs, None
+
+def save_flashcard_set(terms, definitions, title, game_id):
+    if not current_user.is_authenticated:
+        return None, "User not authenticated"
+
+    flashcard_ref = db.collection('saved_flashcards').document()
+    flashcard_ref.set({
+        'title': title,
+        'terms': terms,
+        'definitions': definitions,
+        'created_at': datetime.now(),
+        'game_id': game_id,
+        'last_updated': datetime.now(),
+        'user_id': current_user.id
+    })
+    return flashcard_ref, None
+
+def save_game_results(game_id, time_seconds, correct, total):
+    if not current_user.is_authenticated:
+        return False, "User not authenticated"
+
+    # Verify the game belongs to the current user
+    game_ref = db.collection('games').document(game_id)
+    game = game_ref.get()
+
+    if not game.exists or game.to_dict().get('user_id') != current_user.id:
+        return False, "Game not found or access denied"
+
+    results_ref = db.collection('game_results').document()
+    results_ref.set({
+        'game_id': game_id,
+        'time_seconds': time_seconds,
+        'correct_matches': correct,
+        'total_pairs': total,
+        'created_at': datetime.now(),
+        'user_id': current_user.id
+    })
+
+    # Mark game as completed
+    game_ref.update({'completed': True})
+    return True, None
+
+# Authentication Routes
+@app.route('/login')
+def login():
+    return render_template('login.html', google_client_id=GOOGLE_CLIENT_ID)
+
+@app.route('/login/google', methods=['POST'])
+def google_login():
+    token = request.json.get('token')
+    if not token:
+        return jsonify({'success': False, 'error': 'Token missing'}), 400
+
+    try:
+        # Verify the token
+        idinfo = id_token.verify_oauth2_token(
+            token, google_requests.Request(), GOOGLE_CLIENT_ID)
+
+        if idinfo['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
+            raise ValueError('Wrong issuer.')
+
+        # Create or get user from database
+        user_id = idinfo['sub']
+        user_ref = db.collection('users').document(user_id)
+        user_data = user_ref.get()
+
+        if not user_data.exists:
+            user_ref.set({
+                'email': idinfo['email'],
+                'name': idinfo.get('name', ''),
+                'created_at': datetime.now(),
+                'last_login': datetime.now()
+            })
+        else:
+            user_ref.update({'last_login': datetime.now()})
+
+        user = User(id_=user_id, email=idinfo['email'], name=idinfo.get('name', ''))
+        login_user(user)
+        return jsonify({'success': True, 'user': {'email': user.email, 'name': user.name}})
+
+    except ValueError as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return jsonify({'success': True})
+
+@app.route('/api/user')
+@login_required
+def get_user():
+    return jsonify({
+        'success': True,
+        'user': {
+            'id': current_user.id,
+            'email': current_user.email,
+            'name': current_user.name
+        }
+    })
+
+# Protected API Routes
 @app.route('/')
 def home():
     return render_template('index.html')
 
 @app.route('/api/matching-game', methods=['POST'])
+@login_required
 def create_matching_game():
     data = request.get_json()
-    terms, definitions = data.get('terms', []), data.get('definitions', [])
 
-    if len(terms) != len(definitions):
-        return jsonify({'success': False, 'error': 'Number of terms and definitions must match'}), 400
+    terms = data.get('terms', [])
+    definitions = data.get('definitions', [])
+    save_for_later = data.get('save_flashcards', False)
+    title = data.get('flashcard_title', 'Untitled Flashcards')
 
-    return jsonify({'success': True, 'terms': terms, 'definitions': random.sample(definitions, len(definitions))})
+    # Validate input
+    is_valid, error = validate_game_input(terms, definitions)
+    if not is_valid:
+        return jsonify({'success': False, 'error': error}), 400
+
+    # Create game record
+    game_ref, shuffled_defs, error = create_game_record(terms, definitions)
+    if error:
+        return jsonify({'success': False, 'error': error}), 401
+
+    response = {
+        'success': True,
+        'game_id': game_ref.id,
+        'terms': terms,
+        'definitions': shuffled_defs
+    }
+
+    # Optionally save flashcard set
+    if save_for_later:
+        flashcard_ref, error = save_flashcard_set(terms, definitions, title, game_ref.id)
+        if error:
+            return jsonify({'success': False, 'error': error}), 401
+        response['saved_flashcard_id'] = flashcard_ref.id
+
+    return jsonify(response)
+
+@app.route('/api/game-results', methods=['POST'])
+@login_required
+def save_results():
+    data = request.get_json()
+
+    try:
+        required_fields = ['game_id', 'time_seconds', 'correct_matches', 'total_pairs']
+        if not all(field in data for field in required_fields):
+            return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+
+        success, error = save_game_results(
+            data['game_id'],
+            data['time_seconds'],
+            data['correct_matches'],
+            data['total_pairs']
+        )
+
+        if not success:
+            return jsonify({'success': False, 'error': error}), 401
+
+        return jsonify({'success': True})
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/saved-flashcards', methods=['GET'])
+@login_required
+def get_saved_flashcards():
+    try:
+        flashcards = [
+            {**doc.to_dict(), 'id': doc.id}
+            for doc in db.collection('saved_flashcards')
+                .where('user_id', '==', current_user.id)
+                .stream()
+        ]
+        return jsonify({'success': True, 'flashcards': flashcards})
+
+    except Exception as e:
+        print(" Error in /api/saved-flashcards:", e)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/save-flashcards', methods=['POST'])
+@login_required
+def save_flashcards_only():
+    data = request.get_json()
+    terms = data.get('terms', [])
+    definitions = data.get('definitions', [])
+    title = data.get('flashcard_title', 'Untitled Flashcards')
+
+    # Validate input
+    is_valid, error = validate_game_input(terms, definitions)
+    if not is_valid:
+        return jsonify({'success': False, 'error': error}), 400
+
+    try:
+        #  Save with user_id and last_updated so it shows up in query
+        flashcard_ref = db.collection('saved_flashcards').document()
+        flashcard_ref.set({
+            'title': title,
+            'terms': terms,
+            'definitions': definitions,
+            'created_at': datetime.now(),
+            'last_updated': datetime.now(),
+            'user_id': current_user.id
+        })
+
+        return jsonify({'success': True, 'flashcard_id': flashcard_ref.id})
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/update-flashcard/<flashcard_id>', methods=['PUT'])
+@login_required
+def update_flashcard(flashcard_id):
+    try:
+        data = request.get_json()
+
+        # Get the existing flashcard
+        flashcard_ref = db.collection('saved_flashcards').document(flashcard_id)
+        flashcard = flashcard_ref.get()
+
+        if not flashcard.exists:
+            return jsonify({'success': False, 'error': 'Flashcard not found'}), 404
+
+        if flashcard.to_dict().get('user_id') != current_user.id:
+            return jsonify({'success': False, 'error': 'Unauthorized access'}), 403
+
+        # Prepare update data
+        update_data = {
+            'last_updated': datetime.now()
+        }
+        if 'title' in data:
+            update_data['title'] = data['title']
+        if 'terms' in data:
+            update_data['terms'] = data['terms']
+        if 'definitions' in data:
+            update_data['definitions'] = data['definitions']
+
+        # Update the flashcard
+        flashcard_ref.update(update_data)
+
+        return jsonify({'success': True, 'message': 'Flashcard updated successfully'})
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/delete-flashcard/<flashcard_id>', methods=['DELETE'])
+@login_required
+def delete_flashcard(flashcard_id):
+    try:
+        flashcard_ref = db.collection('saved_flashcards').document(flashcard_id)
+        flashcard = flashcard_ref.get()
+
+        if not flashcard.exists:
+            return jsonify({'success': False, 'error': 'Flashcard not found'}), 404
+
+        if flashcard.to_dict().get('user_id') != current_user.id:
+            return jsonify({'success': False, 'error': 'Unauthorized access'}), 403
+
+        flashcard_ref.delete()
+        return jsonify({'success': True, 'message': 'Flashcard deleted successfully'})
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True)  # Remove ssl_context='adhoc' if not needed
