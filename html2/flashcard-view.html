@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Spartan Odyssey - Flashcard Deck</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* Inline styles for the deck view page */
+    .deck-container {
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 20px;
+      background: #fff;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .deck-container h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .card {
+      background: #f9f9f9;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 3px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    .card h3 {
+      margin: 0 0 5px;
+    }
+    .back-btn {
+      display: inline-block;
+      margin-bottom: 20px;
+      text-decoration: none;
+      color: #fff;
+      background-color: #2d7a2d;
+      padding: 10px 15px;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header with Logo and Navigation -->
+  <header>
+    <div class="logo">Spartan Odyssey</div>
+    <nav>
+      <ul>
+        <li><a href="dashboard.html">Dashboard</a></li>
+        <li><a href="flashcard-deck.html" class="active">Flashcards</a></li>
+        <li><a href="game.html">Game</a></li>
+        <li><a href="notes.html">Notes</a></li>
+        <li><a href="study.html">Study</a></li>
+        <li><a href="test.html">Test</a></li>
+        <li><a href="settings.html">Settings</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="container">
+    <main>
+      <!-- Back button -->
+      <a href="flashcard-deck.html" class="back-btn">Back to Decks</a>
+      <div class="deck-container">
+        <h1 id="deckTitle"></h1>
+        <div id="cardsContainer"></div>
+      </div>
+    </main>
+  </div>
+
+  <footer>
+    <p>&copy; 2025 Spartan Odyssey. All rights reserved.</p>
+  </footer>
+
+  <!-- JavaScript to read deckId from URL and populate deck details -->
+  <script>
+    // Parse the deckId from the URL, e.g., flashcard-view.html?deckId=1
+    const params = new URLSearchParams(window.location.search);
+    const deckId = params.get('deckId');
+
+    // Sample data simulating decks (in practice, replace with data from your back end)
+    const decks = {
+      "1": {
+        title: "Biology Basics",
+        cards: [
+          { question: "What is the powerhouse of the cell?", answer: "Mitochondria" },
+          { question: "What is the basic unit of life?", answer: "Cell" }
+        ]
+      },
+      "2": {
+        title: "Chemistry 101",
+        cards: [
+          { question: "What is the chemical symbol for water?", answer: "H₂O" },
+          { question: "How many elements are in the periodic table?", answer: "118" }
+        ]
+      }
+    };
+
+    // Function to render deck details
+    function displayDeck(deck) {
+      document.getElementById('deckTitle').textContent = deck.title;
+      const container = document.getElementById('cardsContainer');
+      
+      deck.cards.forEach((card, index) => {
+        const cardDiv = document.createElement('div');
+        cardDiv.classList.add('card');
+        cardDiv.innerHTML = `
+          <h3>Card ${index + 1}</h3>
+          <p><strong>Question:</strong> ${card.question}</p>
+          <p><strong>Answer:</strong> ${card.answer}</p>
+        `;
+        container.appendChild(cardDiv);
+      });
+    }
+
+    // Check if deck exists; if so, display it; otherwise, show an error message.
+    if (decks[deckId]) {
+      displayDeck(decks[deckId]);
+    } else {
+      document.getElementById('deckTitle').textContent = "Deck Not Found";
+    }
+  </script>
+</body>
+</html>

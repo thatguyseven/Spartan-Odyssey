@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Spartan Odyssey - Note Text</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .note-content {
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 20px;
+      background: #fff;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .note-content h2 {
+      margin-bottom: 10px;
+    }
+    .back-btn {
+      display: inline-block;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">Spartan Odyssey</div>
+    <nav>
+      <ul>
+        <li><a href="dashboard.html">Dashboard</a></li>
+        <li><a href="flashcard-deck.html">Flashcards</a></li>
+        <li><a href="game.html">Game</a></li>
+        <li><a href="notes.html" class="active">Notes</a></li>
+        <li><a href="study.html">Study</a></li>
+        <li><a href="test.html">Test</a></li>
+        <li><a href="settings.html">Settings</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="container">
+    <aside>
+      <ul class="sidebar-menu">
+        <li><a href="dashboard.html">Home</a></li>
+        <li><a href="flashcard-deck.html">Flashcards</a></li>
+        <li><a href="game.html">Game</a></li>
+        <li><a href="notes.html" class="active">Notes</a></li>
+        <li><a href="study.html">Study</a></li>
+        <li><a href="test.html">Test</a></li>
+        <li><a href="settings.html">Settings</a></li>
+      </ul>
+    </aside>
+
+    <main>
+      <a href="notes.html" class="btn back-btn">Back to Notes</a>
+      <div class="note-content">
+        <h2>Lecture 1: Introduction</h2>
+        <p id="noteText">Loading note content...</p>
+      </div>
+    </main>
+  </div>
+
+  <footer>
+    <p>&copy; 2025 Spartan Odyssey. All rights reserved.</p>
+  </footer>
+
+  <!-- JavaScript to fetch the text file and display its contents -->
+<script>
+   document.addEventListener('DOMContentLoaded', function() {
+     fetch('sample.txt') // Ensure sample.txt is in the correct location
+       .then(response => {
+         if (!response.ok) {
+           throw new Error(`HTTP error! Status: ${response.status}`);
+         }
+         return response.text();
+       })
+       .then(text => {
+         document.getElementById('noteText').textContent = text;
+       })
+       .catch(error => {
+         console.error('Error fetching note text:', error);
+         document.getElementById('noteText').textContent = "Unable to load note content.";
+       });
+   });
+ </script>
+ 
+</body>
+</html>

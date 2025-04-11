@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Spartan Odyssey - View Note</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .note-container {
+      max-width: 800px;
+      margin: 20px auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .note-container h2 {
+      margin-bottom: 10px;
+    }
+    .back-btn {
+      display: inline-block;
+      margin-bottom: 20px;
+      text-decoration: none;
+      color: #fff;
+      background-color: #2d7a2d;
+      padding: 10px 15px;
+      border-radius: 3px;
+    }
+    .edit-btn {
+      float: right;
+      background-color: #2d7a2d;
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 3px;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">Spartan Odyssey</div>
+    <nav>
+      <ul>
+        <li><a href="dashboard.html">Dashboard</a></li>
+        <li><a href="flashcard-deck.html">Flashcards</a></li>
+        <li><a href="game.html">Game</a></li>
+        <li><a href="notes.html" class="active">Notes</a></li>
+        <li><a href="study.html">Study</a></li>
+        <li><a href="test.html">Test</a></li>
+        <li><a href="settings.html">Settings</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="container">
+    <aside>
+      <ul class="sidebar-menu">
+        <li><a href="dashboard.html">Home</a></li>
+        <li><a href="flashcard-deck.html">Flashcards</a></li>
+        <li><a href="game.html">Game</a></li>
+        <li><a href="notes.html" class="active">Notes</a></li>
+        <li><a href="study.html">Study</a></li>
+        <li><a href="test.html">Test</a></li>
+        <li><a href="settings.html">Settings</a></li>
+      </ul>
+    </aside>
+
+    <main>
+      <a href="notes.html" class="back-btn">Back to Notes</a>
+      <div class="note-container">
+        <h2 id="noteTitle">
+          <!-- Title will load from JS -->
+        </h2>
+        <a href="#" id="editNoteLink" class="edit-btn">Edit</a>
+        <p id="noteContent">
+          Loading note content...
+        </p>
+      </div>
+    </main>
+  </div>
+
+  <footer>
+    <p>&copy; 2025 Spartan Odyssey. All rights reserved.</p>
+  </footer>
+
+  <script>
+    // 1. Get noteId from query params (e.g., view-note.html?noteId=1)
+    const params = new URLSearchParams(window.location.search);
+    const noteId = params.get('noteId');
+
+    // 2. Example "fake" data. Replace with your actual back-end fetch or storage
+    const sampleNotes = {
+      "1": {
+        title: "Lecture 1",
+        content: "Key takeaways and summary of Lecture 1..."
+      },
+      "2": {
+        title: "Lecture 2",
+        content: "Important concepts and examples from Lecture 2..."
+      },
+      "3": {
+        title: "Lecture 3",
+        content: "Summary of discussion and main points for Lecture 3..."
+      }
+    };
+
+    // 3. Display note or show error if not found
+    if (sampleNotes[noteId]) {
+      document.getElementById('noteTitle').textContent = sampleNotes[noteId].title;
+      document.getElementById('noteContent').textContent = sampleNotes[noteId].content;
+      
+      // Link to edit page
+      document.getElementById('editNoteLink').setAttribute('href', `edit-note.html?noteId=${noteId}`);
+    } else {
+      document.getElementById('noteTitle').textContent = "Note Not Found";
+      document.getElementById('noteContent').textContent = "Unable to load this note.";
+      document.getElementById('editNoteLink').style.display = "none";
+    }
+  </script>
+</body>
+</html>

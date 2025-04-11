@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Spartan Odyssey - Flashcard Decks</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .deck-list {
+      list-style: none;
+      padding: 0;
+    }
+    .deck-list li {
+      background-color: #fff;
+      margin-bottom: 10px;
+      padding: 15px;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .deck-info {
+      font-size: 0.9em;
+    }
+    .deck-buttons a {
+      margin-left: 10px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">Spartan Odyssey</div>
+    <nav>
+      <ul>
+        <li><a href="dashboard.html">Dashboard</a></li>
+        <li><a href="flashcard-deck.html" class="active">Flashcards</a></li>
+        <li><a href="game.html">Game</a></li>
+        <li><a href="notes.html">Notes</a></li>
+        <li><a href="study.html">Study</a></li>
+        <li><a href="test.html">Test</a></li>
+        <li><a href="settings.html">Settings</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="container">
+    <aside>
+      <ul class="sidebar-menu">
+        <li><a href="dashboard.html">Home</a></li>
+        <li><a href="flashcard-deck.html" class="active">Flashcards</a></li>
+        <li><a href="game.html">Game</a></li>
+        <li><a href="notes.html">Notes</a></li>
+        <li><a href="study.html">Study</a></li>
+        <li><a href="test.html">Test</a></li>
+        <li><a href="settings.html">Settings</a></li>
+      </ul>
+    </aside>
+
+    <main>
+      <h1>Flashcard Decks</h1>
+      <ul class="deck-list">
+        <li>
+          <div class="deck-info">
+            <strong>Deck Name:</strong> Biology Basics<br>
+            <strong>Created:</strong> 2025-01-10<br>
+            <strong>Deck #:</strong> 1
+          </div>
+          <div class="deck-buttons">
+            <a href="flashcard-flip.html?deckId=1" class="btn">Play</a>
+            <a href="flashcard-view.html?deckId=1" class="btn">View Deck</a>
+          </div>
+        </li>
+        <li>
+          <div class="deck-info">
+            <strong>Deck Name:</strong> Chemistry 101<br>
+            <strong>Created:</strong> 2025-02-05<br>
+            <strong>Deck #:</strong> 2
+          </div>
+          <div class="deck-buttons">
+            <a href="flashcard-flip.html?deckId=2" class="btn">Play</a>
+            <a href="flashcard-view.html?deckId=2" class="btn">View Deck</a>
+          </div>
+        </li>
+        <!-- More decks as needed -->
+      </ul>
+    </main>
+  </div>
+
+  <footer>
+    <p>&copy; 2025 Spartan Odyssey. All rights reserved.</p>
+  </footer>
+</body>
+</html>

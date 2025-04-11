@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Spartan Odyssey - Settings</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Header with Logo and Top Navigation -->
+  <header>
+    <div class="logo">Spartan Odyssey</div>
+    <nav>
+      <ul>
+        <li><a href="dashboard.html">Dashboard</a></li>
+        <li><a href="flashcards.html">Flashcards</a></li>
+        <li><a href="game.html"></a></li>
+        <li><a href="notes.html">Notes</a></li>
+        <li><a href="study.html">Study</a></li>
+        <li><a href="test.html">Test</a></li>
+        <li><a href="settings.html" class="active">Settings</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="container">
+    <!-- Sidebar Navigation for Settings Sections -->
+    <aside>
+      <ul class="sidebar-menu">
+        <li><a href="#general" class="active">General</a></li>
+        <li><a href="#user-profile">User Profile</a></li>
+        <li><a href="#account">Account</a></li>
+        <li><a href="#preferences">Preferences</a></li>
+        <li><a href="#achievements">Achievements</a></li>
+      </ul>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main>
+      <!-- General Section -->
+      <section id="general" class="settings-section">
+        <h2>General</h2>
+        <p><strong>Setting 1:</strong> Setting 1</p>
+      </section>
+
+      <!-- User Profile Section -->
+      <section id="user-profile" class="settings-section">
+        <h2>User Profile</h2>
+        <p><strong>Username:</strong> John</p>
+        <p><strong>Password:</strong> ****** <a href="#" class="change-password">Change Password</a></p>
+        <p><strong>Date Joined:</strong> 10-19-2000</p>
+        <p><strong>Current Streak:</strong> 5</p>
+      </section>
+
+      <!-- Account Section -->
+      <section id="account" class="settings-section">
+        <h2>Account</h2>
+        <p><strong>Setting 1:</strong> Some account setting here.</p>
+        <p><strong>Setting 2:</strong> Another account setting here.</p>
+      </section>
+
+      <!-- Preferences Section -->
+      <section id="preferences" class="settings-section">
+        <h2>Preferences</h2>
+        <p><strong>Preference 1:</strong> Some user preference setting.</p>
+        <p><strong>Preference 2:</strong> Another preference setting.</p>
+      </section>
+
+      <!-- Achievements Section -->
+      <section id="achievements" class="settings-section">
+        <h2>Achievements</h2>
+        <p><strong>Achievement 1:</strong> Description or progress.</p>
+        <p><strong>Achievement 2:</strong> Description or progress.</p>
+      </section>
+    </main>
+  </div>
+
+  <footer>
+    <p>&copy; 2025 Spartan Odyssey. All rights reserved.</p>
+  </footer>
+
+  <!-- Optional JavaScript to highlight active section based on hash -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const menuLinks = document.querySelectorAll(".sidebar-menu a");
+      const sections = document.querySelectorAll(".settings-section");
+
+      function activateSection(hash) {
+        // Remove 'active' from all sidebar links
+        menuLinks.forEach(link => link.classList.remove("active"));
+        // Hide all sections
+        sections.forEach(sec => (sec.style.display = "none"));
+
+        // Activate the link that matches the hash
+        const activeLink = document.querySelector(`.sidebar-menu a[href="${hash}"]`);
+        if (activeLink) activeLink.classList.add("active");
+
+        // Show the section with matching ID
+        const activeSection = document.querySelector(hash);
+        if (activeSection) activeSection.style.display = "block";
+      }
+
+      // Listen for hash changes (e.g., user clicks sidebar link)
+      window.addEventListener("hashchange", () => {
+        activateSection(window.location.hash);
+      });
+
+      // Initialize on page load (use the current hash or default to #general)
+      if (window.location.hash) {
+        activateSection(window.location.hash);
+      } else {
+        activateSection("#general");
+      }
+    });
+  </script>
+</body>
+</html>
