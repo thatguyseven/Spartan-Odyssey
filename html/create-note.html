@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Spartan Odyssey - Create Note</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .note-form {
+      max-width: 600px;
+      margin: 20px auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .note-form .form-group {
+      margin-bottom: 15px;
+    }
+    .note-form label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    .note-form input[type="text"],
+    .note-form textarea {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+    }
+    .note-form button {
+      background-color: #2d7a2d;
+      color: #fff;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    .note-form button:hover {
+      background-color: #276327;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <div class="logo">Spartan Odyssey</div>
+    <nav>
+      <ul>
+        <li><a href="dashboard.html">Dashboard</a></li>
+        <li><a href="flashcard-deck.html">Flashcards</a></li>
+        <li><a href="game.html">Game</a></li>
+        <li><a href="notes.html" class="active">Notes</a></li>
+        <li><a href="study.html">Study</a></li>
+        <li><a href="test.html">Test</a></li>
+        <li><a href="settings.html">Settings</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="container">
+    <!-- Sidebar Navigation -->
+    <aside>
+      <ul class="sidebar-menu">
+        <li><a href="dashboard.html">Home</a></li>
+        <li><a href="flashcard-deck.html">Flashcards</a></li>
+        <li><a href="game.html">Game</a></li>
+        <li><a href="notes.html" class="active">Notes</a></li>
+        <li><a href="study.html">Study</a></li>
+        <li><a href="test.html">Test</a></li>
+        <li><a href="settings.html">Settings</a></li>
+      </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main>
+      <h1>Create New Note</h1>
+      <form class="note-form" id="createNoteForm" action="#" method="post">
+        <div class="form-group">
+          <label for="noteTitle">Note Title:</label>
+          <input type="text" id="noteTitle" name="noteTitle" placeholder="e.g. Lecture 4: Topic" required>
+        </div>
+        <div class="form-group">
+          <label for="noteContent">Note Content:</label>
+          <textarea id="noteContent" name="noteContent" rows="10" placeholder="Enter your note details here..." required></textarea>
+        </div>
+        <button type="submit">Create Note</button>
+      </form>
+    </main>
+  </div>
+
+  <footer>
+    <p>&copy; 2025 Spartan Odyssey. All rights reserved.</p>
+  </footer>
+
+  <!-- Optional JavaScript for form submission -->
+  <script>
+    // Example: simple client-side form handling
+    document.getElementById('createNoteForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const title = document.getElementById('noteTitle').value.trim();
+      const content = document.getElementById('noteContent').value.trim();
+      if (!title || !content) {
+        alert('Please fill in all fields.');
+        return;
+      }
+      // TODO: Send data to back-end API for note creation
+      // e.g., fetch('/api/notes', { method: 'POST', body: JSON.stringify({ title, content }) })
+      // For now, just alert success:
+      alert(`New note created:\nTitle: ${title}\nContent: ${content}`);
+      window.location.href = 'notes.html'; // Redirect back to notes page
+    });
+  </script>
+</body>
+</html>
