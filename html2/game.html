@@ -1,1 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Spartan Odyssey - Memory Game</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .memory-game-container {
+      max-width: 800px;
+      margin: 20px auto;
+      text-align: center;
+    }
+    .question-box {
+      border: 2px solid #2d7a2d;
+      padding: 40px;
+      margin-bottom: 20px;
+      font-size: 1.5em;
+      min-height: 100px;
+    }
+    .answers-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+    }
+    .answer {
+      border: 1px solid #ccc;
+      padding: 10px 20px;
+      background: #fff;
+      cursor: grab;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">Spartan Odyssey</div>
+    <nav>
+      <ul>
+        <li><a href="dashboard.html">Dashboard</a></li>
+        <li><a href="flashcard-deck.html">Flashcards</a></li>
+        <li><a href="game.html" class="active">Game</a></li>
+        <li><a href="notes.html">Notes</a></li>
+        <li><a href="study.html">Study</a></li>
+        <li><a href="test.html">Test</a></li>
+        <li><a href="settings.html">Settings</a></li>
+      </ul>
+    </nav>
+  </header>
+  <div class="container">
+    <aside>
+      <ul class="sidebar-menu">
+        <li><a href="dashboard.html">Home</a></li>
+        <li><a href="flashcard-deck.html">Flashcards</a></li>
+        <li><a href="game.html" class="active">Game</a></li>
+        <li><a href="notes.html">Notes</a></li>
+        <li><a href="study.html">Study</a></li>
+        <li><a href="test.html">Test</a></li>
+        <li><a href="settings.html">Settings</a></li>
+      </ul>
+    </aside>
+    <main>
+      <h1>Memory Game</h1>
+      <div class="memory-game-container">
+        <div class="question-box" id="questionBox">
+          Drag the correct answer to match the question below:
+        </div>
+        <div class="answers-container">
+          <div class="answer" draggable="true" id="answer1">Option A</div>
+          <div class="answer" draggable="true" id="answer2">Option B</div>
+          <div class="answer" draggable="true" id="answer3">Option C</div>
+          <div class="answer" draggable="true" id="answer4">Option D</div>
+          <div class="answer" draggable="true" id="answer5">Option E</div>
+          <div class="answer" draggable="true" id="answer6">Option F</div>
+        </div>
+      </div>
+    </main>
+  </div>
+  <footer>
+    <p>&copy; 2025 Spartan Odyssey. All rights reserved.</p>
+  </footer>
+  <script>
+    const answers = document.querySelectorAll('.answer');
+    const questionBox = document.getElementById('questionBox');
+    
+    answers.forEach(answer => {
+      answer.addEventListener('dragstart', dragStart);
+    });
 
+    questionBox.addEventListener('dragover', dragOver);
+    questionBox.addEventListener('drop', dropAnswer);
+
+    function dragStart(e) {
+      e.dataTransfer.setData('text/plain', e.target.id);
+    }
+    function dragOver(e) {
+      e.preventDefault();
+    }
+    function dropAnswer(e) {
+      e.preventDefault();
+      const answerId = e.dataTransfer.getData('text/plain');
+      const answerElem = document.getElementById(answerId);
+      
+      // For demonstration, Option C is considered correct.
+      if (answerElem.textContent === 'Option C') {
+        questionBox.textContent = 'Correct! The answer is Option C.';
+      } else {
+        questionBox.textContent = 'Incorrect! Try again.';
+      }
+      // Reset the prompt after a short delay
+      setTimeout(() => {
+        questionBox.textContent = 'Drag the correct answer to match the question below:';
+      }, 2000);
+    }
+  </script>
+</body>
+</html>
