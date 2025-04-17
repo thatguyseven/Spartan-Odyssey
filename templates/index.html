@@ -33,6 +33,16 @@
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
+
+<!-- DEV NOTE: Adjust banner to start hidden-->
+<!-- Pomodoro Timer Banner -->
+<div id="timer-banner" class="hidden fixed top-0 left-0 w-full bg-green-600 text-white text-center py-2 z-50 shadow-md transition-opacity duration-300">
+  <div class="text-sm font-medium">
+    ⏱ Focus mode: <span id="banner-timer">01:00:00</span> remaining
+  </div>
+</div>
+
+
   <header>
     <div class="logo">Spartan Odyssey</div>
     <nav class="flex items-center justify-between">

@@ -72,7 +72,8 @@
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('schedule-form');
   const msg = document.getElementById('schedule-message');
-
+  
+  // Session Planner
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -108,6 +109,89 @@ document.addEventListener('DOMContentLoaded', () => {
       msg.className = 'text-red-500 text-sm text-center';
     }
   });
+
+  // Pomodoro Timer
+  let timerInterval;
+  let countdownEndTime = null;
+
+  const banner = document.getElementById('timer-banner');
+  const bannerTimer = document.getElementById('banner-timer');
+  const timerDisplay = document.getElementById('timer-display');
+  const startBtn = document.getElementById('start-btn');
+  const stopBtn = document.getElementById('stop-btn');
+
+  function formatTime(seconds) {
+    const hrs = String(Math.floor(seconds / 3600)).padStart(2, '0');
+    const mins = String(Math.floor((seconds % 3600) % 3600 / 60)).padStart(2, '0');
+    const secs = String(seconds % 60).padStart(2, '0');
+    return `${hrs}:${mins}:${secs}`;
+  }
+
+  function updateCountdown() {
+    const now = Date.now();
+    const remaining = Math.floor((countdownEndTime - now) / 1000);
+
+    if (remaining <= 0) {
+      stopFocusMode();
+      return;
+    }
+
+    const formatted = formatTime(remaining);
+    timerDisplay.textContent = formatted;
+    bannerTimer.textContent = formatted;
+  }
+
+  function startFocusMode() {
+    // DEV NOTE: This does not work. Change to hide banner in index.html
+    countdownEndTime = Date.now() + 60 * 60 * 1000; // 1 hour
+    localStorage.setItem('focusTimerEnd', countdownEndTime.toString());
+
+    banner.classList.remove('hidden');
+    startBtn.classList.add('hidden');
+    stopBtn.classList.remove('hidden');
+
+    updateCountdown();
+    timerInterval = setInterval(updateCountdown, 1000);
+  }
+
+  function stopFocusMode() {
+    clearInterval(timerInterval);
+    localStorage.removeItem('focusTimerEnd');
+
+    banner.classList.add('hidden');
+    startBtn.classList.remove('hidden');
+    stopBtn.classList.add('hidden');
+
+    timerDisplay.textContent = "00:00:00";
+    bannerTimer.textContent = "01:00:00";
+  }
+
+  function resumeFocusModeIfActive() {
+    const stored = localStorage.getItem('focusTimerEnd');
+    if (stored) {
+      const endTime = parseInt(stored);
+      const now = Date.now();
+      const remaining = endTime - now;
+
+      if (remaining > 0) {
+        countdownEndTime = endTime;
+
+        banner.classList.remove('hidden');
+        startBtn.classList.add('hidden');
+        stopBtn.classList.remove('hidden');
+
+        updateCountdown();
+        timerInterval = setInterval(updateCountdown, 1000);
+      } else {
+        localStorage.removeItem('focusTimerEnd');
+      }
+    }
+  }
+
+  startBtn.addEventListener('click', startFocusMode);
+  stopBtn.addEventListener('click', stopFocusMode);
+
+  document.addEventListener('DOMContentLoaded', resumeFocusModeIfActive);
 });
 </script>
 {% endblock %}
