@@ -117,7 +117,18 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   createBtn.addEventListener('click', resetForm);
-  cancelBtn.addEventListener('click', () => formContainer.classList.add('hidden'));
+  cancelBtn.addEventListener('click', () => {
+  // 1) Hide the form
+  formContainer.classList.add('hidden');
+
+  // 2) Clear everything out
+  flashcardForm.reset();                // clear title & any built‑in inputs
+  pairsContainer.innerHTML = '';        // remove all existing term/def pairs
+  addFlashcardPair();                   // optionally add a blank pair placeholder
+
+  // 3) Reset editing state
+  editingSetId = null;
+  });
   // Wrap to avoid passing event object
   addPairBtn.addEventListener('click', () => addFlashcardPair());
 
