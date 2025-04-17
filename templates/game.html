@@ -1,453 +1,286 @@
 {% extends "index.html" %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-  <div class="bg-white/90 backdrop-blur-sm dark:bg-gray-900/90 rounded-3xl shadow-2xl overflow-hidden border border-gray-200/50 dark:border-gray-700/50">
+<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-green-100 dark:from-zinc-900 dark:to-zinc-800 p-4">
+  <div class="w-full max-w-md bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl p-6 md:p-8 font-sans text-center space-y-6">
 
-    <!-- Game Header -->
-    <header class="bg-gradient-to-r from-indigo-500 to-blue-600 p-8 text-white text-center relative">
-      <h1 class="text-4xl font-bold tracking-tight mb-2">Flashcard Match</h1>
-      <p class="text-lg opacity-90">Match terms with their definitions</p>
-      <button id="sound-toggle" class="absolute top-4 right-4 bg-white/20 hover:bg-white/30 w-10 h-10 rounded-full flex items-center justify-center text-white transition-all">
-        <i class="fas fa-volume-up"></i>
+    <!-- Header -->
+    <div>
+      <h1 class="text-3xl font-extrabold text-green-700 dark:text-green-400 uppercase tracking-tight">
+        Memory Match
+      </h1>
+      <p class="mt-1 text-gray-600 dark:text-gray-400 text-sm">
+        Match terms with their definitions
+      </p>
+    </div>
+
+    <!-- Setup -->
+    <section id="setup-section" class="space-y-4">
+      <select id="flashcard-set"
+              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-zinc-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-green-400 transition">
+        <option value="">Select a flashcard set</option>
+      </select>
+      <button id="start-game"
+              class="w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded-md font-medium transition">
+        Begin Matching
       </button>
-    </header>
+    </section>
 
-    <!-- Main Game Container -->
-    <main class="p-8">
-      <!-- Setup Section -->
-      <section id="setup-section">
-        <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-4 text-center">Create Your Game</h2>
-        <p class="text-sm text-gray-600 dark:text-gray-400 mb-6 text-center">Choose from saved sets or enter new terms and definitions</p>
-
-        <div class="mb-6 max-w-2xl mx-auto">
-          <label for="flashcard-select" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Choose Saved Flashcard Set</label>
-          <select id="flashcard-select" class="block w-full border border-gray-300 dark:border-gray-700 rounded-lg shadow-sm px-4 py-2 text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800">
-            <option value="">-- Select a Set --</option>
-          </select>
+    <!-- Game Board -->
+    <section id="game-section" hidden class="space-y-6">
+      <div class="flex justify-center items-center space-x-4">
+        <!-- Progress Ring -->
+        <div class="progress-ring">
+          <svg width="80" height="80">
+            <circle class="ring-bg" cx="40" cy="40" r="36" stroke-width="8"/>
+            <circle id="ring" class="ring-fill" cx="40" cy="40" r="36" stroke-width="8"/>
+            <text id="ring-text" x="40" y="45" text-anchor="middle" class="ring-text">0/0</text>
+          </svg>
         </div>
-
-        <!-- Input Pair Rows -->
-        <div id="pair-list" class="mb-6 max-w-2xl mx-auto space-y-4">
-          <!-- Input pairs injected dynamically -->
-        </div>
-
-        <div class="text-center mb-6">
-          <button id="add-pair" class="px-4 py-2 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 font-medium transition-all transform hover:-translate-y-0.5 flex items-center mx-auto">
-            <i class="fas fa-plus mr-2"></i> Add Pair
-          </button>
-        </div>
-
-        <div class="text-center">
-          <button id="start-game" class="px-6 py-3 rounded-full bg-gradient-to-r from-indigo-500 to-blue-600 text-white font-semibold shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5">
-            Start Game
-          </button>
-        </div>
-      </section>
-
-      <!-- Game Controls -->
-      <div id="game-controls" class="flex flex-col sm:flex-row justify-between items-center mb-10 gap-6" style="display:none">
-        <div class="flex items-center gap-4">
-          <button id="new-game-btn" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium transition-all flex items-center justify-center shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
-            <i class="fas fa-sync-alt mr-2"></i> New Game
-          </button>
-          <button id="sets-btn" class="px-4 py-2 rounded-lg bg-gray-600 hover:bg-gray-700 text-white font-medium transition-all flex items-center justify-center shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
-            <i class="fas fa-list-ul mr-2"></i> Change Set
-          </button>
-        </div>
-
-        <!-- Game Stats -->
-        <div class="flex gap-6">
-          <div class="bg-green-100 dark:bg-green-900/30 rounded-full px-4 py-2 flex flex-col items-center justify-center min-w-20">
-            <span class="text-xs font-medium text-gray-600 dark:text-gray-400">Score</span>
-            <span id="score" class="text-lg font-bold text-green-700 dark:text-green-400">0</span>
-          </div>
-          <div class="bg-blue-100 dark:bg-blue-900/30 rounded-full px-4 py-2 flex flex-col items-center justify-center min-w-20">
-            <span class="text-xs font-medium text-gray-600 dark:text-gray-400">Matches</span>
-            <span id="matches" class="text-lg font-bold text-blue-700 dark:text-blue-400">0</span>/<span id="total" class="text-lg font-bold text-blue-700 dark:text-blue-400">0</span>
-          </div>
-          <div class="bg-amber-100 dark:bg-amber-900/30 rounded-full px-4 py-2 flex flex-col items-center justify-center min-w-20">
-            <span class="text-xs font-medium text-gray-600 dark:text-gray-400">Time</span>
-            <span id="timer" class="text-lg font-bold text-amber-600 dark:text-amber-400">0s</span>
-          </div>
-        </div>
+        <!-- Timer -->
+        <div id="timer" class="text-gray-700 dark:text-gray-300 font-mono text-lg">00:00</div>
       </div>
-
-      <!-- Progress Bar -->
-      <div id="progress-container" class="h-2 bg-gray-200 dark:bg-gray-700 rounded-full mb-6" style="display:none">
-        <div id="progress-bar" class="h-full bg-gradient-to-r from-indigo-500 to-blue-600 rounded-full transition-all duration-300" style="width: 0%"></div>
+      <div class="bg-gray-50 dark:bg-zinc-800 border border-green-200 dark:border-green-700 rounded-lg shadow p-4">
+        <div id="cards-container" class="cards-grid"></div>
       </div>
+    </section>
 
-      <!-- Game Board -->
-      <div id="game-section" class="mt-8" style="display:none">
-        <!-- Difficulty Selector -->
-        <div class="flex justify-center gap-3 mb-6">
-          <div class="difficulty-option active px-3 py-1 rounded-full text-sm font-medium cursor-pointer bg-indigo-600 text-white" data-difficulty="normal">Normal</div>
-          <div class="difficulty-option px-3 py-1 rounded-full text-sm font-medium cursor-pointer bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200" data-difficulty="hard">Hard</div>
-          <div class="difficulty-option px-3 py-1 rounded-full text-sm font-medium cursor-pointer bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200" data-difficulty="expert">Expert</div>
-        </div>
+    <!-- Game Over -->
+    <section id="game-over" hidden class="space-y-4 fade-in-down">
+      <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">
+        🎉 You’ve matched them all!
+      </h2>
+      <p class="text-gray-600 dark:text-gray-400 text-sm">
+        Final score:
+        <span id="final-score" class="font-bold text-green-600 dark:text-green-400">0</span>/
+        <span id="final-total" class="font-bold text-green-600 dark:text-green-400">0</span>
+      </p>
+      <p class="text-gray-600 dark:text-gray-400 text-sm">
+        Time taken:
+        <span id="final-time" class="font-bold text-green-600 dark:text-green-400">00:00</span>
+      </p>
+      <button id="play-again"
+              class="w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded-md font-medium transition">
+        New Game
+      </button>
+    </section>
 
-        <div id="game-board" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-6">
-          <!-- Cards will be generated here -->
-        </div>
-      </div>
-
-      <!-- End Section -->
-      <section id="end-section" class="mt-10 text-center" style="display:none">
-        <div class="max-w-md mx-auto p-8 rounded-xl bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-gray-800 dark:to-gray-900 shadow-lg">
-          <div class="text-center">
-            <i class="fas fa-trophy text-4xl text-yellow-500 mb-4"></i>
-            <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-2">Great job!</h2>
-            <p class="text-gray-600 dark:text-gray-300 mb-4">
-              You matched all <span id="final-pairs" class="font-semibold">0</span> pairs
-              in <span id="final-time" class="font-semibold">0</span> seconds!
-            </p>
-
-            <div id="streak-container" class="flex justify-center mb-4 hidden">
-              <div class="bg-amber-500 text-white rounded-full px-3 py-1 text-sm font-medium flex items-center">
-                <i class="fas fa-fire-alt mr-1"></i>
-                <span id="streak-count">3</span> game streak!
-              </div>
-            </div>
-
-            <div class="flex gap-4 justify-center mt-6">
-              <button id="play-again" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium transition-all transform hover:-translate-y-0.5">
-                Play Again
-              </button>
-              <button id="choose-new-set" class="px-4 py-2 rounded-lg bg-gray-600 hover:bg-gray-700 text-white font-medium transition-all transform hover:-translate-y-0.5">
-                New Set
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-    </main>
   </div>
 </div>
-
-<!-- Toast Container -->
-<div id="toast-container" class="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50 pointer-events-none"></div>
-{% endblock %}
-
-{% block styles %}
-<style>
-  /* Memory Card Styles */
-  .memory-card {
-    position: relative;
-    aspect-ratio: 3/4;
-    perspective: 1000px;
-    cursor: pointer;
-    transition: transform 0.3s ease;
-  }
-
-  .memory-card:hover {
-    transform: translateY(-4px);
-  }
-
-  .memory-card-inner {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    text-align: center;
-    transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    transform-style: preserve-3d;
-  }
-
-  .memory-card.flipped .memory-card-inner {
-    transform: rotateY(180deg);
-  }
-
-  .memory-card.matched {
-    opacity: 0.6;
-    cursor: default;
-  }
-
-  .memory-card-face {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    -webkit-backface-visibility: hidden;
-    backface-visibility: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-    border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-    overflow: hidden;
-  }
-
-  .memory-card-front {
-    background: linear-gradient(135deg, #6366f1, #3b82f6);
-    color: white;
-    position: relative;
-  }
-
-  .memory-card-front::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
-  }
-
-  .memory-card-back {
-    background: white;
-    color: #1f2937;
-    transform: rotateY(180deg);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .memory-card-back {
-      background: #374151;
-      color: #f3f4f6;
-    }
-  }
-
-  .card-content {
-    font-weight: 500;
-    font-size: 0.95rem;
-    word-break: break-word;
-    max-width: 100%;
-  }
-
-  .card-label {
-    position: absolute;
-    top: 0.5rem;
-    left: 0.5rem;
-    font-size: 0.65rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    opacity: 0.8;
-  }
-
-  /* Toast Notifications */
-  .toast {
-    background: rgba(0, 0, 0, 0.8);
-    color: white;
-    padding: 0.75rem 1.5rem;
-    border-radius: 50px;
-    font-weight: 500;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-    margin-top: 0.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    opacity: 0;
-    transform: translateY(20px);
-    animation: toast-in 0.3s forwards, toast-out 0.3s forwards 2s;
-  }
-
-  @keyframes toast-in {
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  @keyframes toast-out {
-    to { opacity: 0; transform: translateY(-20px); }
-  }
-
-  /* Difficulty Option Styles */
-  .difficulty-option {
-    transition: all 0.3s ease;
-  }
-
-  .difficulty-option:not(.active):hover {
-    background-color: #e5e7eb;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .difficulty-option:not(.active):hover {
-      background-color: #4b5563;
-    }
-  }
-
-  /* Input styles */
-  .pair-row {
-    display: flex;
-    gap: 1rem;
-    align-items: center;
-    position: relative;
-  }
-
-  .pair-row .remove-pair {
-    position: absolute;
-    right: -2.5rem;
-    color: #ef4444;
-    opacity: 0.7;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .pair-row .remove-pair:hover {
-    opacity: 1;
-    transform: scale(1.1);
-  }
-
-  /* Animations */
-  @keyframes celebrate {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); }
-  }
-
-  .celebrate {
-    animation: celebrate 0.5s ease;
-  }
-
-  /* Match effect */
-  @keyframes match-pulse {
-    0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
-    70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
-  }
-
-  .match-animation {
-    animation: match-pulse 0.8s ease-out;
-  }
-</style>
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+
+<style>
+  @keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .fade-in-down { animation: fadeInDown 0.5s ease-out; }
+
+  .progress-ring { width: 80px; height: 80px; }
+  .ring-bg { fill: none; stroke: #e5e7eb; }
+  .ring-fill { fill: none; stroke: #10b981; transition: stroke-dashoffset 0.5s ease; }
+  .ring-text { font-size: 0.8rem; fill: #374151; }
+
+  .cards-grid {
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-rows: repeat(3, 120px);
+    grid-auto-columns: 120px;
+    gap: 0.75rem;
+    justify-content: center;
+  }
+
+  .memory-card { perspective: 800px; cursor: pointer; }
+  .memory-card-inner {
+    position: relative; width: 100%; height: 100%;
+    transform-style: preserve-3d;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .cube-face {
+    position: absolute; width: 100%; height: 100%;
+    background: #2f3b55; color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0.5rem; box-sizing: border-box; font-size: 0.75rem;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .face-front  { transform: translateZ(60px); }
+  .face-back   { transform: rotateY(180deg) translateZ(60px); }
+  .face-right  { transform: rotateY(90deg) translateZ(60px); }
+  .face-left   { transform: rotateY(-90deg) translateZ(60px); }
+  .face-top    { transform: rotateX(90deg) translateZ(60px); }
+  .face-bottom { transform: rotateX(-90deg) translateZ(60px); }
+
+  .memory-card.selected .cube-face {
+    background-color: #a7f3d0; color: #065f46;
+  }
+  .memory-card.matched .memory-card-inner {
+    opacity: 0.6; pointer-events: none;
+  }
+</style>
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  // DOM Elements
-  const dom = {
-    // Setup elements
-    setupSection: document.getElementById('setup-section'),
-    flashcardSelect: document.getElementById('flashcard-select'),
-    pairList: document.getElementById('pair-list'),
-    addPairBtn: document.getElementById('add-pair'),
-    startGameBtn: document.getElementById('start-game'),
+  const setupSection   = document.getElementById('setup-section');
+  const gameSection    = document.getElementById('game-section');
+  const overSection    = document.getElementById('game-over');
+  const selectEl       = document.getElementById('flashcard-set');
+  const startBtn       = document.getElementById('start-game');
+  const cardsContainer = document.getElementById('cards-container');
+  const playAgainBtn   = document.getElementById('play-again');
+  const timerEl        = document.getElementById('timer');
+  const finalTimeEl    = document.getElementById('final-time');
+  const ring           = document.getElementById('ring');
+  const ringText       = document.getElementById('ring-text');
+  const scoreEl        = document.getElementById('final-score');
+  const totalEl        = document.getElementById('final-total');
 
-    // Game elements
-    gameSection: document.getElementById('game-section'),
-    gameControls: document.getElementById('game-controls'),
-    progressContainer: document.getElementById('progress-container'),
-    progressBar: document.getElementById('progress-bar'),
-    gameBoard: document.getElementById('game-board'),
-    scoreDisplay: document.getElementById('score'),
-    matchesDisplay: document.getElementById('matches'),
-    totalDisplay: document.getElementById('total'),
-    timerDisplay: document.getElementById('timer'),
+  // hide all sections except setup
+  setupSection.hidden = false;
+  gameSection.hidden  = true;
+  overSection.hidden  = true;
 
-    // End game elements
-    endSection: document.getElementById('end-section'),
-    finalPairs: document.getElementById('final-pairs'),
-    finalTime: document.getElementById('final-time'),
-    playAgainBtn: document.getElementById('play-again'),
-    chooseNewSetBtn: document.getElementById('choose-new-set'),
+  // configure ring
+  const radius = 36, circ = 2 * Math.PI * radius;
+  ring.style.strokeDasharray  = circ;
+  ring.style.strokeDashoffset = circ;
+  function updateRing(matched, total) {
+    ring.style.strokeDashoffset = circ * (1 - matched/total);
+    ringText.textContent = `${matched}/${total}`;
+  }
 
-    // Game controls
-    newGameBtn: document.getElementById('new-game-btn'),
-    setsBtn: document.getElementById('sets-btn'),
-    soundToggle: document.getElementById('sound-toggle'),
+  // timer
+  let timerInterval, seconds = 0;
+  function startTimer() {
+    clearInterval(timerInterval);
+    seconds = 0;
+    timerEl.textContent = '00:00';
+    timerInterval = setInterval(() => {
+      seconds++;
+      const m = String(Math.floor(seconds/60)).padStart(2,'0'),
+            s = String(seconds%60).padStart(2,'0');
+      timerEl.textContent = `${m}:${s}`;
+    }, 1000);
+  }
+  function stopTimer() {
+    clearInterval(timerInterval);
+    finalTimeEl.textContent = timerEl.textContent;
+  }
 
-    // Toast container
-    toastContainer: document.getElementById('toast-container')
-  };
+  // bind tilt effect
+  function bindTilt(card) {
+    const inner = card.querySelector('.memory-card-inner');
+    card.addEventListener('mousemove', e => {
+      const r = card.getBoundingClientRect();
+      const x = (e.clientX - (r.left + r.width/2)) / r.width  * 20;
+      const y = -(e.clientY - (r.top  + r.height/2)) / r.height * 20;
+      inner.style.transform = `rotateX(${y}deg) rotateY(${x}deg)`;
+    });
+    card.addEventListener('mouseleave', () => inner.style.transform = '');
+  }
 
-  // Game State
-  const state = {
-    currentSet: null,
-    cards: [],
-    flippedCards: [],
-    matchedPairs: 0,
-    totalPairs: 0,
-    score: 0,
-    timer: null,
-    timeElapsed: 0,
-    soundEnabled: true,
-    difficulty: 'normal',
-    difficultySettings: {
-      normal: {
-        timeLimit: 0, // No time limit
-        flipDuration: 0.6
-      },
-      hard: {
-        timeLimit: 120, // 2 minutes
-        flipDuration: 0.4
-      },
-      expert: {
-        timeLimit: 60, // 1 minute
-        flipDuration: 0.3
+  // load flashcard sets
+  fetch('/api/saved-flashcards', { credentials: 'include' })
+    .then(r=>r.json())
+    .then(data => {
+      if (data.success) {
+        data.flashcards.forEach((set,i) => {
+          const o = document.createElement('option');
+          o.value = i;
+          o.textContent = set.title || 'Untitled Set';
+          o.dataset.terms = JSON.stringify(set.terms);
+          o.dataset.defs  = JSON.stringify(set.definitions);
+          selectEl.append(o);
+        });
       }
-    },
-    isProcessing: false,
-    streakCount: 0
-  };
+    }).catch(console.error);
 
-  // Sound effects
-  const sounds = {
-    flip: new Audio('data:audio/mp3;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gQ29uY3JldGVNYXNvbnJ5LmNvbQBURU5DAAAAHQAAA1N3aXRjaCBQbHVzIMKpIE5DSCBTb2Z0d2FyZQBUSVQyAAAABgAAADIyMzUAVFNTRQAAAA8AAANMYXZmNTguMjkuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV'),
-    match: new Audio('data:audio/mp3;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gQ29uY3JldGVNYXNvbnJ5LmNvbQBURU5DAAAAHQAAA1N3aXRjaCBQbHVzIMKpIE5DSCBTb2Z0d2FyZQBUSVQyAAAABgAAADIyMzUAVFNTRQAAAA8AAANMYXZmNTguMjkuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV'),
-    win: new Audio('data:audio/mp3;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gQ29uY3JldGVNYXNvbnJ5LmNvbQBURU5DAAAAHQAAA1N3aXRjaCBQbHVzIMKpIE5DSCBTb2Z0d2FyZQBUSVQyAAAABgAAADIyMzUAVFNTRQAAAA8AAANMYXZmNTguMjkuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV')
-  };
+  // start game
+  startBtn.addEventListener('click', () => {
+    const sel = selectEl.options[selectEl.selectedIndex];
+    if (!sel?.dataset.terms) return alert('Please select a set.');
 
-  // Initialize
-  initializeGame();
+    const terms = JSON.parse(sel.dataset.terms),
+          defs  = JSON.parse(sel.dataset.defs);
 
-  // Create initial input pairs
-  createInputPair();
-  createInputPair();
+    // build pairs
+    const pairs = [];
+    terms.forEach((t,i) => {
+      if (t.trim()) pairs.push({ text: t.trim(), id: i });
+      if (defs[i]?.trim()) pairs.push({ text: defs[i].trim(), id: i });
+    });
+    if (!pairs.length) return alert('No valid pairs.');
 
-  // Load saved flashcard sets
-  loadFlashcardSets();
+    setupSection.hidden = true;
+    gameSection.hidden  = false;
+    overSection.hidden  = true;
 
-  // Event Listeners
-  dom.addPairBtn.addEventListener('click', () => createInputPair());
-  dom.startGameBtn.addEventListener('click', startGame);
-  dom.playAgainBtn.addEventListener('click', playAgain);
-  dom.chooseNewSetBtn.addEventListener('click', showSetup);
-  dom.newGameBtn.addEventListener('click', resetAndNewGame);
-  dom.setsBtn.addEventListener('click', showSetup);
-  dom.soundToggle.addEventListener('click', toggleSound);
+    cardsContainer.innerHTML = '';
+    let firstCard = null, lock = false, matches = 0, total = pairs.length/2;
+    updateRing(matches, total);
+    startTimer();
 
-  // Difficulty selector events
-  document.querySelectorAll('.difficulty-option').forEach(option => {
-    option.addEventListener('click', () => {
-      document.querySelectorAll('.difficulty-option').forEach(opt => {
-        opt.classList.remove('active');
-        opt.classList.remove('bg-indigo-600');
-        opt.classList.remove('text-white');
-        opt.classList.add('bg-gray-200');
-        opt.classList.add('dark:bg-gray-700');
-        opt.classList.add('text-gray-800');
-        opt.classList.add('dark:text-gray-200');
+    pairs.sort(()=>Math.random()-0.5).forEach(p => {
+      const card = document.createElement('div');
+      card.className = 'memory-card';
+      card.dataset.id = p.id;
+      card.innerHTML = `
+        <div class="memory-card-inner">
+          <div class="cube-face face-front">${p.text}</div>
+          <div class="cube-face face-back"></div>
+          <div class="cube-face face-right"></div>
+          <div class="cube-face face-left"></div>
+          <div class="cube-face face-top"></div>
+          <div class="cube-face face-bottom"></div>
+        </div>`;
+      bindTilt(card);
+
+      card.addEventListener('click', () => {
+        if (lock || card.classList.contains('matched')) return;
+        card.classList.add('selected');
+        if (!firstCard) {
+          firstCard = card;
+          return;
+        }
+        lock = true;
+        if (firstCard.dataset.id === card.dataset.id) {
+          [firstCard, card].forEach(c => c.classList.add('matched'));
+          matches++;
+          updateRing(matches, total);
+          if (matches === total) {
+            scoreEl.textContent = matches;
+            totalEl.textContent = total;
+            setTimeout(() => {
+              gameSection.hidden = true;
+              overSection.hidden = false;
+              confetti({ particleCount: 150, spread: 60, origin: { y: 0.6 } });
+              stopTimer();
+            }, 800);
+          }
+        } else {
+          setTimeout(() => {
+            [firstCard, card].forEach(c => c.classList.remove('selected'));
+          }, 800);
+        }
+        setTimeout(() => { firstCard = null; lock = false; }, 800);
       });
 
-      option.classList.add('active');
-      option.classList.add('bg-indigo-600');
-      option.classList.add('text-white');
-      option.classList.remove('bg-gray-200');
-      option.classList.remove('dark:bg-gray-700');
-      option.classList.remove('text-gray-800');
-      option.classList.remove('dark:text-gray-200');
-
-      state.difficulty = option.dataset.difficulty;
-      resetAndNewGame();
+      cardsContainer.append(card);
     });
   });
 
-  // Functions
-  function initializeGame() {
-    state.matchedPairs = 0;
-    state.score = 0;
-    state.timeElapsed = 0;
-    state.flippedCards = [];
-    state.isProcessing = false;
-    dom.scoreDisplay.textContent = '0';
-    dom.matchesDisplay.textContent = '0';
-    dom.timerDisplay.textContent = '0s';
-  }
-
-  function createInputPair(term = '', def = '') {
-    const pairId = Date.now().toString();
-    const row = document.createElement('div');
-    row.className = 'pair-row';
-    row.innerHTML = `
-      <input type="text" class="term w-full border border-gray-300 dark:border-gray-700 rounded-lg shadow-sm px-4 py-2 text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800" placeholder="Term" value="${term}">
-      <input type="text" class="definition w-full border border-gray-300 dark:border-gray-700 rounded-lg shadow-sm px-4 py-2 text-gray-800
+  // play again
+  playAgainBtn.addEventListener('click', () => {
+    setupSection.hidden = false;
+    gameSection.hidden  = true;
+    overSection.hidden  = true;
+    selectEl.value = '';
+    cardsContainer.innerHTML = '';
+    timerEl.textContent = '00:00';
+    updateRing(0,1);
+  });
+});
+</script>
+{% endblock %}
