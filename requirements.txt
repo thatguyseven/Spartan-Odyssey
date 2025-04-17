@@ -1,0 +1,12 @@
+flask 
+firebase-admin 
+flask-login 
+flask-cors 
+flask-limiter 
+flask-talisman 
+google-auth 
+google-auth-oauthlib 
+pytz 
+apscheduler 
+sendgrid 
+dotenv
