@@ -1,0 +1,98 @@
+{% extends "index.html" %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto mt-16 px-6">
+  <div class="bg-white border border-gray-200 shadow-xl rounded-2xl p-8">
+
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-8">
+      <h1 class="text-3xl font-bold text-[#2d7a2d] flex items-center gap-3">
+        <i class="fas fa-book-open text-2xl text-green-600"></i> My Lectures
+      </h1>
+      <button
+        id="add-lecture-btn"
+        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow font-medium transition"
+      >
+        + Add Lecture
+      </button>
+    </div>
+
+    <!-- Lecture List -->
+    <div id="lecture-container">
+      <div id="lecture-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const lectureList = document.getElementById('lecture-list');
+    const addBtn = document.getElementById('add-lecture-btn');
+
+    async function loadLectures() {
+      const res = await fetch('/api/lecture_titles', { credentials: 'include' });
+      const data = await res.json();
+
+      if (data.success && data.lectures.length > 0) {
+        data.lectures.forEach(lecture => {
+          const card = document.createElement('div');
+          card.className = 'note-card bg-white border border-gray-200 rounded-xl p-5 shadow hover:shadow-lg transition';
+          card.innerHTML = `
+            <h3 class="text-xl font-semibold text-[#2d7a2d] mb-2">${lecture.lecture_title}</h3>
+            <p class="text-gray-600">${lecture.summary}</p>
+            <div class="mt-4 flex justify-between items-center">
+              <a href="/notes/editor?lecture=${encodeURIComponent(lecture.lecture_title)}"
+                 class="text-green-700 hover:underline font-semibold">
+                  View Note
+              </a>
+              <button onclick="deleteLecture('${lecture.lecture_title}')" class="text-red-500 hover:underline text-sm">🗑 Delete</button>
+            </div>
+          `;
+          lectureList.appendChild(card);
+        });
+      }
+    }
+
+    async function handleAddLecture() {
+      const title = prompt("Enter a name for your new lecture:");
+      if (!title || title.trim() === '') return;
+
+      const res = await fetch('/api/lectures', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ lecture_title: title.trim() })
+      });
+
+      const result = await res.json();
+      if (result.success) {
+        window.location.href = `/notes/editor?lecture=${encodeURIComponent(title.trim())}`;
+      } else {
+        alert("Failed to create lecture.");
+      }
+    }
+
+    window.deleteLecture = async function(title) {
+      if (!confirm(`Delete lecture "${title}" and all its notes?`)) return;
+
+      const res = await fetch(`/api/lectures/${encodeURIComponent(title)}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        alert('🗑 Lecture deleted!');
+        location.reload();
+      } else {
+        alert(' Failed to delete lecture: ' + data.error);
+      }
+    };
+
+    addBtn.addEventListener('click', handleAddLecture);
+    loadLectures();
+  });
+</script>
+{% endblock %}

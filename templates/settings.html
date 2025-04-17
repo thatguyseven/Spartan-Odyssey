@@ -1,0 +1,104 @@
+{% extends "index.html" %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto mt-16 p-6 bg-white shadow rounded-xl">
+  <h1 class="text-2xl font-bold text-gray-800 mb-6">️ Settings</h1>
+  <p class="text-gray-600 mb-4">Manage your preferences and account settings below.</p>
+
+  <form id="settings-form" class="space-y-6">
+    <div>
+      <label for="display-name" class="block text-gray-700 font-medium mb-1">Display Name</label>
+      <input type="text" id="display-name" class="w-full px-4 py-2 border rounded-md shadow-sm focus:outline-none focus:ring focus:border-green-400" placeholder="e.g. SpartanLearner" />
+    </div>
+
+    <div>
+      <label for="theme-select" class="block text-gray-700 font-medium mb-1">Theme</label>
+      <select id="theme-select" class="w-full px-4 py-2 border rounded-md shadow-sm focus:outline-none focus:ring focus:border-green-400">
+        <option>Light</option>
+        <option>Dark</option>
+      </select>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <input type="checkbox" id="email-notifs" class="w-5 h-5 text-green-600" />
+      <label for="email-notifs" class="text-gray-700">Enable weekly summaries</label>
+    </div>
+
+    <!--  Success/Error Message -->
+    <p id="settings-success" class="text-green-600 text-sm hidden mt-2"></p>
+
+    <div class="flex justify-end">
+      <button type="submit" class="modern-btn primary-btn"> Save Changes</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const successMsg = document.getElementById('settings-success');
+  const themeSelect = document.getElementById('theme-select');
+
+  function applyTheme(theme) {
+    if (theme === 'Dark') {
+      document.body.classList.add('dark-theme');
+    } else {
+      document.body.classList.remove('dark-theme');
+    }
+  }
+
+  document.getElementById('settings-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const payload = {
+      display_name: document.getElementById('display-name').value.trim(),
+      theme: themeSelect.value,
+      email_notifications: document.getElementById('email-notifs').checked
+    };
+
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+      successMsg.classList.remove('hidden');
+
+      if (data.success) {
+        successMsg.textContent = 'Settings saved successfully.';
+        successMsg.classList.remove('text-red-600');
+        successMsg.classList.add('text-green-600');
+        applyTheme(payload.theme);
+      } else {
+        successMsg.textContent = 'Failed to save settings: ' + (data.error || 'Unknown error');
+        successMsg.classList.remove('text-green-600');
+        successMsg.classList.add('text-red-600');
+      }
+    } catch (err) {
+      successMsg.textContent = 'An error occurred while saving settings.';
+      successMsg.classList.remove('text-green-600');
+      successMsg.classList.add('text-red-600');
+      successMsg.classList.remove('hidden');
+    }
+  });
+
+  window.addEventListener('DOMContentLoaded', async () => {
+    try {
+      const res = await fetch('/api/settings', { credentials: 'include' });
+      const data = await res.json();
+      if (data.success && data.settings) {
+        const { display_name, theme, email_notifications } = data.settings;
+        document.getElementById('display-name').value = display_name || '';
+        themeSelect.value = theme || 'Light';
+        document.getElementById('email-notifs').checked = email_notifications || false;
+        applyTheme(theme);
+      }
+    } catch (e) {
+      console.warn("Could not load saved settings.");
+    }
+  });
+</script>
+{% endblock %}
