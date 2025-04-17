@@ -190,32 +190,76 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderFlashcardSet(set) {
-    const card = document.createElement('div');
-    card.className = 'flashcard-set dark:bg-zinc-900 rounded-xl shadow-md p-6 border border-gray-200 dark:border-gray-700 animate-fade-in-up';
-    card.innerHTML = `
-      <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
-        <h3 class="text-xl font-bold text-gray-800 dark:text-white">${set.title||'Untitled'}</h3>
-        <div class="flex gap-2">
-          <button class="edit-btn text-blue-600 hover:underline">✏️ Edit</button>
-          <button class="delete-btn text-red-600 hover:underline">🗑️ Delete</button>
+  const card = document.createElement('div');
+  card.className = 'flashcard-set dark:bg-zinc-900 rounded-xl shadow-md p-6 border border-gray-200 dark:border-gray-700 animate-fade-in-up';
+
+  let currentIndex = 0;
+
+  const updateCardContent = () => {
+    termEl.textContent = set.terms[currentIndex] || '';
+    defEl.textContent = set.definitions[currentIndex] || '';
+  };
+
+  card.innerHTML = `
+    <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
+      <h3 class="text-xl font-bold text-gray-800 dark:text-white">${set.title || 'Untitled'}</h3>
+      <div class="flex gap-2">
+        <button class="edit-btn text-blue-600 hover:underline">✏️ Edit</button>
+        <button class="delete-btn text-red-600 hover:underline">🗑️ Delete</button>
+      </div>
+    </div>
+    <div class="flex flex-col items-center gap-4 mt-4">
+      <div class="flip-card cursor-pointer w-full max-w-md">
+        <div class="flip-card-inner">
+          <div class="flip-card-front p-6 text-center text-lg font-semibold bg-white dark:bg-zinc-800 rounded-lg shadow">
+            <span id="term"></span>
+          </div>
+          <div class="flip-card-back p-6 text-center text-lg font-medium bg-green-100 dark:bg-zinc-700 rounded-lg shadow">
+            <span id="definition"></span>
+          </div>
         </div>
       </div>
-      <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
-        ${set.terms.map((t,i)=>
-          `<div class="flip-card cursor-pointer">
-             <div class="flip-card-inner">
-               <div class="flip-card-front">${t}</div>
-               <div class="flip-card-back">${set.definitions[i]||''}</div>
-             </div>
-           </div>`
-        ).join('')}
+      <div class="flex gap-6 mt-4">
+        <button class="prev-btn px-6 py-3 text-base font-medium bg-gray-200 dark:bg-zinc-700 rounded-lg hover:bg-gray-300 dark:hover:bg-zinc-600">
+          Previous
+        </button>
+        <button class="next-btn px-6 py-3 text-base font-medium bg-gray-200 dark:bg-zinc-700 rounded-lg hover:bg-gray-300 dark:hover:bg-zinc-600">
+          Next
+        </button>
       </div>
-    `;
-    card.querySelectorAll('.flip-card').forEach(el=>el.addEventListener('click',()=>el.classList.toggle('flipped')));
-    card.querySelector('.edit-btn').addEventListener('click',()=>editFlashcardSet(set));
-    card.querySelector('.delete-btn').addEventListener('click',()=>deleteFlashcardSet(set.id));
-    flashcardsList.appendChild(card);
-  }
+      <div class="text-sm text-gray-600 dark:text-gray-400">Card <span id="current-index">1</span> of ${set.terms.length}</div>
+    </div>
+  `;
+
+  const flipCard = card.querySelector('.flip-card');
+  const termEl = card.querySelector('#term');
+  const defEl = card.querySelector('#definition');
+  const indexEl = card.querySelector('#current-index');
+
+  flipCard.addEventListener('click', () => flipCard.classList.toggle('flipped'));
+
+  card.querySelector('.prev-btn').addEventListener('click', () => {
+    if (currentIndex > 0) {
+      currentIndex--;
+      updateCardContent();
+      indexEl.textContent = currentIndex + 1;
+    }
+  });
+
+  card.querySelector('.next-btn').addEventListener('click', () => {
+    if (currentIndex < set.terms.length - 1) {
+      currentIndex++;
+      updateCardContent();
+      indexEl.textContent = currentIndex + 1;
+    }
+  });
+
+  card.querySelector('.edit-btn').addEventListener('click', () => editFlashcardSet(set));
+  card.querySelector('.delete-btn').addEventListener('click', () => deleteFlashcardSet(set.id));
+
+  updateCardContent();
+  flashcardsList.appendChild(card);
+}
 
   function editFlashcardSet(set) {
     editingSetId = set.id;
