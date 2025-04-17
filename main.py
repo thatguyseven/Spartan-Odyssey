@@ -1,18 +1,135 @@
-from flask import Flask, request, jsonify, render_template, send_from_directory
+# Python Standard Library Imports
+import os
 import random
+import warnings
+from datetime import datetime, timedelta
+from functools import wraps
+
+# Flask and Flask Extensions
+from flask import (
+    Flask,
+    request,
+    jsonify,
+    render_template,
+    send_from_directory,
+    redirect
+)
+from flask_login import (
+    LoginManager,
+    UserMixin,
+    login_user,
+    login_required,
+    logout_user,
+    current_user
+)
+from flask_cors import CORS
+
+# Firebase Admin SDK
 import firebase_admin
 from firebase_admin import credentials, firestore
-from datetime import datetime, timedelta
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from google.cloud.firestore_v1 import CollectionReference
+
+# Google Auth
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
-from google_client_id import GOOGLE_CLIENT_ID
-import os
-from functools import wraps
-from flask_cors import CORS
-from flask import redirect
 
+# Time Zone Handling
+import pytz
 
+# Background Task Scheduler
+from apscheduler.schedulers.background import BackgroundScheduler
+
+# Email Service
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
+
+# Security Enhancements
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_talisman import Talisman
+from dotenv import load_dotenv
+
+# Input Validation
+from marshmallow import Schema, fields, validate
+
+# Filter Firestore-related warnings
+warnings.filterwarnings('ignore', category=UserWarning)
+
+# ── Scheduler setup ──────────────────────────────────────────────────────────
+# Use UTC (or your desired tz) so times compare properly against Firestore timestamps
+
+def send_study_reminder(email, title, study_time):
+    try:
+        print(f"Attempting to send reminder to {email} for {title}")
+        sg = SendGridAPIClient(SENDGRID_API_KEY)
+        message = Mail(
+            from_email=SENDGRID_FROM_EMAIL,
+            to_emails=email,
+            subject='Time to Study! 📚',
+            html_content=f'''
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2 style="color: #2C5282;">Study Session Reminder</h2>
+                    <p>Hello! This is a reminder for your scheduled study session:</p>
+                    <div style="background-color: #EBF8FF; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                        <p><strong>Topic:</strong> {title}</p>
+                        <p><strong>Time:</strong> {study_time.strftime('%I:%M %p, %B %d, %Y')} UTC</p>
+                    </div>
+                    <p>Good luck with your studies! 🌟</p>
+                </div>
+            '''
+        )
+        response = sg.send(message)
+        print(f"Reminder sent successfully. Status code: {response.status_code}")
+        return True
+    except Exception as e:
+        print(f"Failed to send reminder: {str(e)}")
+        return False
+
+def check_and_send_study_reminders():
+    now = datetime.utcnow()
+    window = now + timedelta(minutes=1)
+
+    try:
+        sessions = db.collection('study_sessions')\
+            .where('time', '>=', now)\
+            .where('time', '<=', window)\
+            .stream()
+
+        for doc in sessions:
+            session = doc.to_dict()
+            try:
+                if send_study_reminder(session['email'], session['title'], session['time']):
+                    doc.reference.delete()  # Only delete if email was sent successfully
+                    print(f"Reminder sent and session {doc.id} deleted")
+                else:
+                    print(f"Failed to send reminder for session {doc.id}")
+            except Exception as e:
+                print(f"Error processing reminder for session {doc.id}: {str(e)}")
+
+    except Exception as e:
+        print(f"Error checking study reminders: {str(e)}")
+
+def initialize_scheduler():
+    try:
+        scheduler = BackgroundScheduler(timezone=pytz.UTC)
+        scheduler.add_job(
+            check_and_send_study_reminders,
+            'interval',
+            minutes=1,
+            id='study_reminder_check',
+            replace_existing=True
+        )
+        scheduler.start()
+        print("Scheduler initialized successfully")
+        return scheduler
+    except Exception as e:
+        print(f"Failed to initialize scheduler: {e}")
+        return None
+
+# Initialize the scheduler
+scheduler = initialize_scheduler()
+
+#----------------------------------------------------------------------------------------------------------------------
 # Initialize Flask app
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY") or os.urandom(24)
@@ -600,13 +717,143 @@ def save_quiz_result():
 
 
 
+from flask_login import logout_user
+
+@app.route('/api/delete-account', methods=['POST'])
+@login_required
+def delete_account():
+    user_id = current_user.id
+
+    # 1) Delete the user’s own Firestore document
+    db.collection('users').document(user_id).delete()
+
+    # 2) Delete any per‑user data collections:
+    #    - Settings
+    db.collection('user_settings').document(user_id).delete()
+    #    - Flashcards
+    for doc in db.collection('saved_flashcards').where('user_id','==',user_id).stream():
+        doc.reference.delete()
+    #    - Games & results
+    for doc in db.collection('games').where('user_id','==',user_id).stream():
+        doc.reference.delete()
+    for doc in db.collection('game_results').where('user_id','==',user_id).stream():
+        doc.reference.delete()
+    #    - Notes & lectures
+    for doc in db.collection('notes').where('user_id','==',user_id).stream():
+        doc.reference.delete()
+    for doc in db.collection('lectures').where('user_id','==',user_id).stream():
+        doc.reference.delete()
+    #    - Quiz results
+    for doc in db.collection('quiz_results').where('user_id','==',user_id).stream():
+        doc.reference.delete()
+
+    # 3) Log the user out
+    logout_user()
+
+    return jsonify({'success': True})
+@app.route('/study')
+@login_required
+def study_page():
+    try:
+        upcoming_sessions = db.collection('study_sessions')\
+            .where('user_id', '==', current_user.id)\
+            .where('time', '>=', datetime.utcnow())\
+            .order_by('time')\
+            .stream()
+
+        sessions = [{
+            'id': doc.id,
+            'title': doc.to_dict()['title'],
+            'time': doc.to_dict()['time'].isoformat(),
+            'email': doc.to_dict()['email']
+        } for doc in upcoming_sessions]
+
+        return render_template('study.html',
+                            google_client_id=GOOGLE_CLIENT_ID,
+                            upcoming_sessions=sessions)
+    except Exception as e:
+        print(f"Error loading study page: {str(e)}")
+        return render_template('error.html',
+                            error="Failed to load study page",
+                            google_client_id=GOOGLE_CLIENT_ID), 500
+
+@app.errorhandler(Exception)
+def handle_error(error):
+    print(f"Unhandled error: {str(error)}")
+    if request.path.startswith('/api/'):
+        return jsonify({
+            'success': False,
+            'error': 'Internal server error'
+        }), 500
+    return render_template('error.html',
+                         error="An unexpected error occurred",
+                         google_client_id=GOOGLE_CLIENT_ID), 500
+
+@app.route('/api/schedule-study-session', methods=['POST'])
+@login_required
+def schedule_study_session():
+    data = request.get_json()
+    title = data.get('title')
+    time_str = data.get('time')
+
+    if not title or not time_str:
+        return jsonify({'success': False, 'error': 'Missing title or time'}), 400
+
+    study_time = datetime.fromisoformat(time_str).replace(tzinfo=pytz.UTC)
+
+    db.collection('study_sessions').add({
+        'title': title,
+        'time': study_time,
+        'email': current_user.email,
+        'user_id': current_user.id
+    })
+
+    return jsonify({'success': True})
+
+@app.route('/api/study-sessions/<session_id>', methods=['DELETE'])
+@login_required
+def delete_study_session(session_id):
+    session_ref = db.collection('study_sessions').document(session_id)
+    session_doc = session_ref.get()
+
+    if not session_doc.exists or session_doc.to_dict().get('user_id') != current_user.id:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+
+    session_ref.delete()
+    return jsonify({'success': True})
+
+
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(app.root_path, 'static'),
+                               'favicon.ico', mimetype='image/vnd.microsoft.icon')
+
+
+@app.route('/api/study-sessions', methods=['GET'])
+@login_required
+def get_study_sessions():
+    try:
+        upcoming_sessions = db.collection('study_sessions')\
+            .where('user_id', '==', current_user.id)\
+            .where('time', '>=', datetime.now(pytz.UTC))\
+            .order_by('time')\
+            .stream()
+
+        sessions = [{
+            'id': doc.id,
+            'title': doc.to_dict()['title'],
+            'time': doc.to_dict()['time'].strftime('%Y-%m-%d %H:%M')
+        } for doc in upcoming_sessions]
+
+        return jsonify({'success': True, 'sessions': sessions})
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 
 if __name__ == '__main__':
-    # Remove the adhoc cert:
+    # Load environment variables
+    load_dotenv()
+
+    # Start the Flask app
     app.run(debug=True)
-
-
-
-# And remove or comment this:
-# app.config['SESSION_COOKIE_SECURE'] = True
-
